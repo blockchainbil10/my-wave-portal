@@ -4,6 +4,7 @@ pragma solidity ^0.8.0;
 
 contract WavePortal {
     uint256 totalWaves;
+    address public owner;
 
     /*
      * A little magic, Google what events are in Solidity!
@@ -26,7 +27,8 @@ contract WavePortal {
      */
     Wave[] waves;
 
-    constructor() {
+    constructor() payable {
+        owner = msg.sender;
     }
 
     /*
@@ -35,19 +37,20 @@ contract WavePortal {
      * sends us from the frontend!
      */
     function wave(string memory _message) public {
-        totalWaves += 1;
+    totalWaves += 1;
 
-        /*
-         * This is where I actually store the wave data in the array.
-         */
-        waves.push(Wave(msg.sender, _message, block.timestamp));
+    waves.push(Wave(msg.sender, _message, block.timestamp));
 
-        /*
-         * I added some fanciness here, Google it and try to figure out what it is!
-         * Let me know what you learn in #general-chill-chat
-         */
-        emit NewWave(msg.sender, block.timestamp, _message);
-    }
+    emit NewWave(msg.sender, block.timestamp, _message);
+
+    uint256 prizeAmount = 0.0001 ether;
+    require(
+        prizeAmount <= address(this).balance,
+        "Trying to withdraw more money than the contract has."
+    );
+    (bool success, ) = (msg.sender).call{value: prizeAmount}("");
+    require(success, "Failed to withdraw money from contract.");
+}
 
     /*
      * I added a function getAllWaves which will return the struct array, waves, to us.
@@ -62,4 +65,5 @@ contract WavePortal {
         // We'll also print it over in run.js as well.
         return totalWaves;
     }
+
 }

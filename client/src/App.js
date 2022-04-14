@@ -14,6 +14,7 @@ class App extends Component {
         chainid: null,
         currentAccount: null,
         contract: null,
+        allWaves: [],
     }
     this.connectWallet = this.connectWallet.bind(this)
 }
@@ -28,6 +29,8 @@ class App extends Component {
         chainid: chainid
       }, await this.loadContract(chainid, "WavePortal"))
       
+      this.getAllWaves()
+
     }
     
     checkIfWalletIsConnected = async () => {
@@ -106,7 +109,9 @@ class App extends Component {
           /*
           * Execute the actual wave from your smart contract
           */
-          const waveTxn = await wavePortalContract.wave();
+          //const waveTxn = await wavePortalContract.wave();
+          const waveTxn = await wavePortalContract.wave("this is a message")
+
           console.log("Mining...", waveTxn.hash);
   
           await waveTxn.wait();
@@ -116,6 +121,42 @@ class App extends Component {
           console.log("Retrieved total wave count...", count.toNumber());
         } else {
           console.log("Ethereum object doesn't exist!");
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    }
+
+    getAllWaves = async () => {
+      try {
+        const { ethereum } = window;
+        if (ethereum) {
+          const wavePortalContract = this.state.contract
+  
+          /*
+           * Call the getAllWaves method from your Smart Contract
+           */
+          const waves = await wavePortalContract.getAllWaves();
+  
+          /*
+           * We only need address, timestamp, and message in our UI so let's
+           * pick those out
+           */
+          let wavesCleaned = [];
+          waves.forEach(wave => {
+            wavesCleaned.push({
+              address: wave.waver,
+              timestamp: new Date(wave.timestamp * 1000),
+              message: wave.message
+            });
+          });
+  
+          /*
+           * Store our data in React State
+           */
+          this.setState({allWaves: wavesCleaned});
+        } else {
+          console.log("Ethereum object doesn't exist!")
         }
       } catch (error) {
         console.log(error);
@@ -146,6 +187,14 @@ class App extends Component {
                     Connect Wallet
                   </button>
                 )}
+                {this.state.allWaves.map((wave, index) => {
+          return (
+            <div key={index} style={{ backgroundColor: "OldLace", marginTop: "16px", padding: "8px" }}>
+              <div>Address: {wave.address}</div>
+              <div>Time: {wave.timestamp.toString()}</div>
+              <div>Message: {wave.message}</div>
+            </div>)
+        })}
               </div>
             </div>
           );
