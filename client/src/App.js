@@ -31,6 +31,8 @@ class App extends Component {
       
       this.getAllWaves()
 
+      this.listenForWaves()
+
     }
     
     checkIfWalletIsConnected = async () => {
@@ -161,6 +163,33 @@ class App extends Component {
       } catch (error) {
         console.log(error);
       }
+    }
+
+    listenForWaves = async () => {
+      let wavePortalContract;
+
+      const onNewWave = (from, timestamp, message) => {
+        console.log("NewWave", from, timestamp, message);
+        this.setState(allWaves => [
+          ...allWaves,
+          {
+            address: from,
+            timestamp: new Date(timestamp * 1000),
+            message: message,
+          },
+        ]);
+      };
+    
+      if (window.ethereum) {
+        wavePortalContract = this.state.contract
+        wavePortalContract.on("NewWave", onNewWave);
+      }
+    
+      return () => {
+        if (wavePortalContract) {
+          wavePortalContract.off("NewWave", onNewWave);
+        }
+      };
     }
 
     render() {
